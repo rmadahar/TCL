@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<head>
+	<style>
+		body {
+			padding: 0;
+			margin: 0;
+			border: 0;
+		}
+		#GameBoardContainer {
+			position: absolute;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="GameBoardContainer">
+		<canvas id="GameBoard" width="800" height="600">
+		</canvas>
+	</div>
+
+	<script>
+		// Some contstants
+		var numberOfCards = 52;
+		var cardWidth = 79;
+		var cardHeight = 123;
+		var backOverlap = 5;
+		var defaultOverlap = 20;
+		var numPlayers = 4;
+
+		// Arrays to hold players and cards
+		var players = [];
+		var playerOneCards = [];
+		var playerTwoCardCount = 0;
+		var playerThreeCardCount = 0;
+		var playerFourCardCount = 0;
+		var tableCardCount = 0;
+		var discardedCardKinds = [];
+		var selectedCardIndexes = [];
+		var selectedCardNumbers = [];
+
+		// Get the canvas and context
+		var canvas = document.getElementById("GameBoard");
+		var context = canvas.getContext("2d");
+
+		// Default values for variables
+		var overlap = defaultOverlap;
+		var cardDisplayWidth = 0;
+		
+		// TEST data
+		var myUserId = 2;
+		var jsonData = '{"cards": [1,2,3,4,1,2,3,4,0,1,2,2,3,4,0,3,2,1,2,4,4,0,4,0,1,1,2,1,2,3,4,1,2,3,4,0,1,2,2,3,4,0,3,2,1,2,4,4,0,4,0,1], "kind": 3, "players": [{"id": 1, "name": "al"}, {"id": 2, "name": "bob"}, {"id": 3, "name": "call"}, {"id": 4, "name": "darius"}], "cur_player_id": 1, "turn_no": 5, "new_round": 0}';
+		drawGameBoard(jsonData);
+
+		// Draws the game board on each turn
+		function drawGameBoard(jsonData) {
+
+			// Set up some default/starting values for variables
+			overlap = defaultOverlap;
+			var cards = [];
+
+			// Parse the JSON data
+			jsonData = JSON.parse(jsonData);
+			
+			// If it's the start of the game, then we can retrieve the player info
+			var playerOneIndex = 0;
+			if (jsonData.hasOwnProperty('players')) {
+				var jsonPlayers = jsonData.players;
+				for (var i = 0; i < jsonPlayers.length; i++) {
+					if (jsonPlayers[i].user_id == myUserId) {
+						playerOneIndex = i;
+						break;
+					}
+				}
+				for (var i = playerOneIndex; i < numPlayers; i++) {
+					players.push(jsonPlayers[i]);
+				}
+				for (i = 0; i < playerOneIndex; i++) {
+					players.push(jsonPlayers[i]);
+				}
+			}	
+
+			var cards = jsonData.cards;
+
+			// Empty the card info variables and repopulate them
+			playerOneCards = [];
+			playerTwoCardCount = 0;
+			playerThreeCardCount = 0;
+			playerFourCardCount = 0;
+			tableCardCount = 0;
+			discardedCardKinds = [];
+	
+			for (i = 0; i < cards.length; i++) {
+				switch(cards[i]) {
+					case players[0].id:
+						playerOneCards.push(i);
+						break;
+					case players[1].id:
+						playerTwoCardCount++;
+						break;
+					case players[2].id:
+						playerThreeCardCount++;
+						break;
+					case players[3].id:
+						playerFourCardCount++;
+						break;
+					case 0:
+						tableCardCount++;
+						break;
+					case -1:
+						var kind = i % 13;
+						var isDiscarded = false;
+						for (var j = 0; j < discardedCardKinds.length; j++) {
+							if (discardedCardKinds[j] == kind) {
+								isDiscarded = true;
+								break;
+							}
+						}
+						if (!isDiscarded) {
+							discardedCardKinds.push(kind);
+						}
+				}
+			}
+
+			// How much overlap can playerOne's cards have and still fit on the screen?
+			cardDisplayWidth = ((playerOneCards.length - 1) * defaultOverlap) + 79;
+			if (cardDisplayWidth > canvas.width) {
+				overlap = (canvas.width - cardWidth)/(playerOneCards.length - 1);
+				cardDisplayWidth = ((playerOneCards.length - 1) * overlap) + 79;
+			}
+
+			//Draw the cards
+			drawCards();
+		}
+
+		function drawCardsOnCanvas() {
+			// draw the cards
+			for (var i = cards.length - 1; i >= 0; i--) {
+				context.drawImage(this, cards[i][0], cards[i][1], cardWidth, cardHeight, cards[i][2], cards[i][3], cardWidth, cardHeight);
+			}
+
+		}
+
+		function drawCards() {
+			
+			// clear the canvas
+			context.fillStyle="#003300";
+			context.fillRect(canvas.offsetLeft,canvas.offsetTop,canvas.width,canvas.height);
+		
+			// Empty the array of card information
+			cards = [];
+
+			// Loop through the player's cards and find the corresponding area of the
+			// 'cards.png' sprite sheet, and work out where each card should appear.
+			// Add this to the array of card information
+			for (var i = 0; i < playerOneCards.length; i++) {
+				var sourceX = (playerOneCards[i] % 13) * cardWidth;
+				var sourceY = (Math.floor(playerOneCards[i] / 13)) * cardHeight;
+				var destX = i * overlap;
+				var destY = 450;
+				for (var j = 0; j < selectedCardIndexes.length; j++) {
+					if (selectedCardIndexes[j] == i) {
+						destY = 430;
+						break;
+					}
+				}
+				cards.push(new Array(sourceX, sourceY, destX, destY));
+			}
+
+			// locate the card back image in the cards sprite sheet.
+			sourceX = 2 * cardWidth;
+			sourceY = 4 * cardHeight;
+
+			// Now loop through the other entities on the table creating records
+			// for each card that needs to appear face down.
+
+			// Player 2
+			destX = 0;
+			for (i = 0; i < playerTwoCardCount; i++) {
+				destY = (i * backOverlap) + 27;
+				cards.push(new Array(sourceX, sourceY, destX, destY));
+			}
+
+			// Player 3
+			destY = 27;
+			for (i = 0; i < playerThreeCardCount; i++) {
+				destX = (i * backOverlap) + 150;
+				cards.push(new Array(sourceX, sourceY, destX, destY));
+			}
+
+			// Player 4
+			destX = 650;
+			for (i = 0; i < playerFourCardCount; i++) {
+				destY = (i * backOverlap) + 27;
+				cards.push(new Array(sourceX, sourceY, destX, destY));
+			}
+
+			// Table
+			destY = 240;
+			for (i = tableCardCount; i > 0; i--) {
+				destX = (i * backOverlap) + 250;
+				cards.push(new Array(sourceX, sourceY, destX, destY));
+			}
+
+			// Discarded
+			// TODO: Where/how are we displaying this information?
+			
+			// Write the players' names on the board
+			context.font = "bold 12px Arial";
+			context.fillStyle = "#ffffff";
+			console.log(players[0].name);
+			context.fillText(players[0].name, 0, 590);
+			context.fillText(players[1].name, 0, 18);
+			context.fillText(players[2].name, 150, 18);
+			context.fillText(players[3].name, 650, 18);
+			
+			// Create an image object for the cards
+			var card = new Image();
+			card.addEventListener('load', drawCardsOnCanvas, false);	
+			card.src = 'cards.png';
+		}
+
+		function selectCard(event) {
+			// A player can play at most 3 cards in a turn
+			var maxCards = 3;
+
+			// TODO: You currently can't click the top 20 px of a card when it is above the line of cards.
+			// This is a bit tricky to implement as the rules for overlap for the part poking out are different
+			// to the rules for the bottom part, so an extra bit of logic would need to be added.
+
+			// TODO: You should only be able to select cards when it is your turn
+			var x = Math.floor((event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft));
+			var y = Math.floor((event.clientY + document.body.scrollTop + document.documentElement.scrollTop));
+			x -= canvas.offsetLeft;
+			y -= canvas.offsetTop;
+			if (y >= 450 && y <= 450 + cardHeight && x <= cardDisplayWidth) {
+				// Assume player clicked the first card
+				var cardClicked = 0;
+				// If their mouse x position is further across than the first card, then work out which card they clicked
+				if (x > cardWidth) {
+					cardClicked = Math.ceil((x - cardWidth)/overlap);
+				}
+				console.log(cardClicked);
+				// Now work out if the user was selecting or deselecting a card
+				var processedCard = false;
+				for (var i = 0; i < selectedCardIndexes.length; i++) {
+					if (cardClicked == selectedCardIndexes[i]) {
+						selectedCardIndexes.splice(i, 1);
+						selectedCardNumbers.splice(i, 1);
+						processedCard = true;
+					}
+				}
+				if (!processedCard && selectedCardIndexes.length < maxCards) {
+					selectedCardIndexes.push(cardClicked);
+					selectedCardNumbers.push(playerOneCards[cardClicked]);
+				}
+
+				console.log(selectedCardIndexes);
+				console.log(selectedCardNumbers);
+
+				// Now redraw the board to show which cards are now selected.
+				drawCards();
+			}
+		}
+
+		function getSelectedCards() {
+			return selectedCardNumbers;
+		}
+
+		canvas.addEventListener('click', selectCard, false);
+	</script>
+</body>
+
+</html>
+

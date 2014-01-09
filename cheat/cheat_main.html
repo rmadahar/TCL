@@ -1,0 +1,33 @@
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script>
+    	##TP_PLAY training/cheat/dashboard.js##
+    </script>
+    <link rel="stylesheet" href="##TP_STUFF_URL##dashboard.css">
+</head>
+<body>
+<div id="wrapper">
+<div id="GameBoardContainer">
+		<canvas id="GameBoard" width="800" height="600"></canvas>
+</div>
+<div id="dashboard">
+	<div id="play_info">
+		<div id="timer">You have <span></span> seconds.</div>
+    	<button id="play_btn">PLAY</button>
+    	<button id="cheat_btn">CHEAT</button>
+	</div>
+    <div id="log">
+		<h4>Play log</h4>
+		<p id="log_message"></p>
+		<hr />
+		<p id="discarded">The following kinds have been discarded: <span></span></p>
+	    <hr />
+		<p id="game_id">Game ID: <span></span></p>
+    	<p id="turn_no">Turn number: <span></span></p>
+		<p id="player">It is currently <span></span>'s turn</p>
+	</div>
+</div>
+</div>
+</body>
+</html>

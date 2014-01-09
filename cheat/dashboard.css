@@ -1,0 +1,44 @@
+h4, p {
+	margin: 0;
+}
+
+#wrapper {
+	background-color: #003300;
+	color: white;
+	width: 840px;
+	overflow: hidden;
+}
+
+#GameBoardContainer {
+	margin: 20px;
+	position: relative;
+	width: 800px;
+	height: 600px;
+}
+
+#GameBoard {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+#dashboard {
+	width: 800px;
+	margin: 20px;
+	border: 1px solid black;
+	background-color: #999999;
+	color: black;
+	overflow: hidden;
+}
+
+#play_info {
+	float: left;
+}
+
+#log {
+	float: right;
+	background-color: white;
+	border: 1px solid black;
+	width: 200px;
+	margin: 10px;
+}
