@@ -1,0 +1,58 @@
+namespace eval CHEAT {
+
+        asSetAct CHEAT_reg_user             [namespace code reg_user]
+	asSetAct CHEAT_play_action          [namespace code play_action]
+	asSetAct CHEAT_cheat_action         [namespace code cheat_action]
+
+proc reg_user {} {
+	global DB EVENTS
+
+	set username [reqGetArg username]
+	set password [reqGetArg password]
+	set name     [reqGetArg firstname]
+	set surname  [reqGetArg surname]
+
+	set sql {
+		insert into tUsers 
+			(name,
+			surname,
+			username,
+			password)
+		values
+			(?,?,?,?)
+	}
+
+	if {[catch {set stmt [inf_prep_sql $DB $sql]} msg]} {
+		tpBindString err_msg "error occured while preparing statement"
+		ob::log::write ERROR {===>error: $msg}
+		tpSetVar err 1
+		asPlayFile -nocache training/drilldown-events.html
+		return
+	}
+
+	if {[catch {set rs [inf_exec_stmt $stmt $name $surname $username $password]} msg]} {
+		tpBindString err_msg "error occured while executing query"
+		ob::log::write ERROR {===>error: $msg}
+		catch {inf_close_stmt $stmt}
+		tpSetVar err 1
+		asPlayFile -nocache training/drilldown-events.html
+		return
+	}
+	
+	catch {inf_close_stmt $stmt}
+
+	db_close $rs
+
+
+	asPlayFile -nocache cheat/cheat_main.html
+}
+
+proc play_action {} {
+ asPlayFile -nocache cheat/cheat_main.html
+}
+
+proc cheat_action {} {
+  asPlayFile -nocache cheat/cheat_main.html
+}
+
+}
